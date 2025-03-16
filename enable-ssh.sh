@@ -59,22 +59,44 @@ if [[ "$OS_TYPE" == "macOS" ]]; then
         echo "❌ SSH is NOT running! You may need to restart."
     fi
 
-# ✅ Linux-Specific SSH Setup
+# ✅ Linux-Specific SSH Setup (Now Using `/etc/os-release`)
 elif [[ "$OS_TYPE" == *Linux* ]]; then
     echo "🔹 Configuring SSH for Linux..."
 
-    # Install OpenSSH if not installed
-    if ! command -v sshd &> /dev/null; then
-        echo "📦 Installing OpenSSH server..."
-        sudo apt update && sudo apt install -y openssh-server || sudo yum install -y openssh-server
+    # Install OpenSSH based on detected Linux distribution
+    if [[ "$ID" == "ubuntu" || "$ID_LIKE" == "debian" ]]; then
+        echo "📦 Installing OpenSSH (Debian-based)..."
+        sudo apt update && sudo apt install -y openssh-server
+    elif [[ "$ID" == "centos" || "$ID_LIKE" == "rhel fedora" ]]; then
+        echo "📦 Installing OpenSSH (RHEL-based)..."
+        sudo yum install -y openssh-server
+    elif [[ "$ID" == "arch" ]]; then
+        echo "📦 Installing OpenSSH (Arch Linux)..."
+        sudo pacman -S --noconfirm openssh
+    elif [[ "$ID" == "alpine" ]]; then
+        echo "📦 Installing OpenSSH (Alpine Linux)..."
+        sudo apk add --no-cache openssh
+    else
+        echo "❌ Unsupported Linux distribution!"
+        exit 1
     fi
 
     # Enable & start SSH service
-    sudo systemctl enable ssh
-    sudo systemctl restart ssh
+    if command -v systemctl &>/dev/null; then
+        sudo systemctl enable ssh
+        sudo systemctl restart ssh
+    elif command -v service &>/dev/null; then
+        sudo service ssh restart
+    elif [ -f /etc/init.d/ssh ]; then
+        sudo /etc/init.d/ssh restart
+    else
+        echo "❌ Cannot restart SSH. Unknown system type."
+    fi
 
     # Verify SSH status
-    if systemctl is-active --quiet ssh; then
+    if command -v systemctl &>/dev/null && systemctl is-active --quiet ssh; then
+        echo "✅ SSH is running on Linux."
+    elif command -v service &>/dev/null && service ssh status | grep -q "active (running)"; then
         echo "✅ SSH is running on Linux."
     else
         echo "❌ SSH is NOT running! You may need to restart."
