@@ -45,8 +45,13 @@ fi
 if [[ "$OS_TYPE" == "macOS" ]]; then
     echo "🔹 Configuring SSH for macOS..."
     
-    # Enable SSH Remote Login
-    sudo systemsetup -setremotelogin on
+    # Try systemsetup first (requires Full Disk Access)
+    if sudo systemsetup -setremotelogin on 2>/dev/null; then
+        echo "✅ Remote Login enabled via systemsetup."
+    else
+        echo "⚠️ systemsetup failed (Full Disk Access required). Using alternative..."
+        sudo launchctl load -w /System/Library/LaunchDaemons/ssh.plist
+    fi
 
     # Ensure SSH auto-restarts if it crashes
     sudo launchctl enable system/com.openssh.sshd
@@ -59,7 +64,7 @@ if [[ "$OS_TYPE" == "macOS" ]]; then
         echo "❌ SSH is NOT running! You may need to restart."
     fi
 
-# ✅ Linux-Specific SSH Setup (Now Using `/etc/os-release`)
+# ✅ Linux-Specific SSH Setup (Using `/etc/os-release`)
 elif [[ "$OS_TYPE" == *Linux* ]]; then
     echo "🔹 Configuring SSH for Linux..."
 
