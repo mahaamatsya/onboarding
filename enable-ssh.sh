@@ -2,6 +2,7 @@
 
 # 🚀 Universal SSH Setup Script for macOS & Linux
 # ✅ Enables SSH, auto-starts on boot, and fixes permissions
+# Run the following command in the curl -sS https://raw.githubusercontent.com/mahaamatsya/onboarding/main/enable-ssh.sh | bash to setup
 
 # Ensure script runs with sudo/root privileges
 if [ "$(id -u)" -ne 0 ]; then
